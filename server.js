@@ -58,8 +58,8 @@ app.post('/autocard-webhook', (req, res) => {
     return;
   }
   if (req.body.action !== 'opened') {
-    res.send(`Nothing to do for action=${req.body.action}`);
-    console.log(`Nothing to do for action=${req.body.action}\n`);
+    console.log(`Nothing to do for action=${req.body.action}`);
+    res.send(`Nothing to do for action=${req.body.action}\n`);
     return;
   }
   if (!req.body.issue) {
@@ -75,7 +75,7 @@ app.post('/autocard-webhook', (req, res) => {
     method: 'POST',
     uri: `https://api.github.com/projects/columns/${prefs.columnID}/cards`,
     headers: {
-      'User-Agent': 'request-promise-native github-webhook.js',
+      'User-Agent': 'https://github.com/mjkelly/autocard',
       Authorization: 'token ' + prefs.token,
       Accept: 'application/vnd.github.v3+json; application/vnd.github.inertia-preview+json'
     },
