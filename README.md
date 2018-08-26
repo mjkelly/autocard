@@ -15,6 +15,9 @@ specific columns, but initially creating a card (which is a project-specific
 entity) from an issue (with is a repo-specific entity) remains a manual
 operation. This tool automates that.
 
+This tool does *not* sync all issues to the target project -- so it doesn't
+handle backfilling cards, or catching up after you missing webhooks.
+
 ## Caveats
 
 This project is written in Node, and I used it as a way to help learn Node.
@@ -22,12 +25,14 @@ Don't look at the code as a good example; assume I'm doing everything wrong.
 
 ## Setup 
 
+We assume you already have a github repo with issues, and a project you want to
+send new issues to.
+
 1. Generate a new github API key:
     - In Github's web interface, click:
       Settings -> Developer settings -> Personal access tokens
     - It needs "repo" scope.
 2. Determine column ID for new issues:
-    - Create a project in your repo.
     - In Github's web interface, view your project and pick which column you
       want new issues to be added to. Click the 3 dots -> "Copy column URL".
     - You'll get a URL like this:
