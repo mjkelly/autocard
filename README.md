@@ -56,7 +56,6 @@ it behind a reverse proxy or a load balancer that adds SSL termination.)
 
 There's a Dockerfile included. The easiest way to use it is to use the
 Makefile, by typing `make docker-build`.
-```
 
 Which will create a new image, `mjkelly/autocard:latest`. Now you can run that
 image with `make docker-run`.
