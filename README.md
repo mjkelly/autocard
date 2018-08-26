@@ -34,9 +34,11 @@ Don't look at the code as a good example; assume I'm doing everything wrong.
       https://github.com/mjkelly/projects-test/projects/1#column-3284701
       That number in #column-<id> is the column ID.
 3. Set up a webhook on your repo to talk to this service.
-    - The webhook should POST to the path /autocard-webhook
-    - The webhook only needs to post "Issues".
-    - Set a secret on the project. This is any string; it's a shared secret
+    - The webhook should POST to `/autocard-webhook/<id>`
+      where `<id>` is the column ID you determined in step 2.
+    - Set content type to `application/json`.
+    - Set the webhook to trigger only on "Issues" events.
+    - Set a secret on the webhook. This is any string; it's a shared secret
       between github and this server, so this server knows webhooks are
       authentic.
 4. Put all that info in autocard.json! See

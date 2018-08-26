@@ -10,43 +10,46 @@ const express = require('express');
 const request = require('request-promise-native');
 const verifyGithubWebhook = require('verify-github-webhook');
 
-const prefsFile = process.issue_to_project_prefs_file || 'autocard.json';
+const configFile = process.autocard_config_file || 'autocard.json';
 
 const app = express();
 app.use(bodyParser.json());
 
-const rawPrefs = fs.readFileSync(prefsFile);
+const rawPrefs = fs.readFileSync(configFile);
 if (!rawPrefs) {
-  throw new Error('Could not read preferences file ' + prefsFile);
+  throw new Error(`Could not read config file ${configFile}`);
 }
-const prefs = JSON.parse(rawPrefs);
+const config = JSON.parse(rawPrefs);
 
-if (prefs.debug) {
+['token', 'secret', 'debug', 'listenPort'].forEach(k => {
+  if (config[k] === undefined) {
+    throw new Error(`Key ${k} missing from ${configFile}`);
+  }
+});
+console.log(`Loaded config from ${configFile}`);
+
+if (config.debug) {
   console.log('Debug mode on');
-  console.log('Preferences file:', prefsFile);
-  console.log('Preferences:', prefs);
+  console.log('Config:', config);
 }
 
 // Handlers
 
-app.get('/autocard-webhook', (req, res) => {
+app.all('/', (req, res) => {
   res.set('Content-type', 'text/plain');
-  // This is just for checking your load balancer or reverse proxy (which
-  // you're using to add SSL termination, right?) is working.
-  res.send('This is autocard. Send a POST request\n');
+  res.send('autocard\n');
 });
 
-app.post('/autocard-webhook', (req, res) => {
+app.post('/autocard-webhook/:columnid', (req, res) => {
   res.set('Content-type', 'text/plain');
   const signature = req.get('X-Hub-Signature');
-  if (prefs.debug) {
-    console.log('POST body:', req.body);
+  if (config.debug) {
     console.log('Signature:', signature);
   }
 
   try {
-    if (!verifyGithubWebhook.default(signature, JSON.stringify(req.body), prefs.secret)) {
-      console.log('Invalid signature:', signature);
+    if (!verifyGithubWebhook.default(signature, JSON.stringify(req.body), config.secret)) {
+      console.log('Invalid signature');
       res.status(404).send('Invalid signature.\n');
       return;
     }
@@ -57,6 +60,7 @@ app.post('/autocard-webhook', (req, res) => {
     res.status(404).send(`Error validating signature: ${signature}\n`);
     return;
   }
+
   if (req.body.action !== 'opened') {
     console.log(`Nothing to do for action=${req.body.action}`);
     res.send(`Nothing to do for action=${req.body.action}\n`);
@@ -70,13 +74,19 @@ app.post('/autocard-webhook', (req, res) => {
 
   const issueNum = parseInt(req.body.issue.number, 10);
   const issueID = parseInt(req.body.issue.id, 10);
+  const columnID = parseInt(req.params.columnid, 10);
+
+  if (config.debug) {
+    console.log('columID:', columnID);
+    console.log('POST body:', req.body);
+  }
   console.log(`Issue ${issueNum} (${issueID}) in ${req.body.repository.full_name} opened`);
   const opts = {
     method: 'POST',
-    uri: `https://api.github.com/projects/columns/${prefs.columnID}/cards`,
+    uri: `https://api.github.com/projects/columns/${columnID}/cards`,
     headers: {
       'User-Agent': 'https://github.com/mjkelly/autocard',
-      Authorization: 'token ' + prefs.token,
+      Authorization: 'token ' + config.token,
       Accept: 'application/vnd.github.v3+json; application/vnd.github.inertia-preview+json'
     },
     body: {
@@ -85,19 +95,20 @@ app.post('/autocard-webhook', (req, res) => {
     },
     json: true
   };
-  if (prefs.debug) {
+  if (config.debug) {
     console.log('Making request:', opts);
   }
   request(opts)
     .then(resp => {
       res.send(`OK. Got: ${JSON.stringify(resp)}`);
+      console.log(`Successfully added issue ID ${issueID} to column ${columnID}`);
     }).catch(error => {
-      res.status(500).send(`Error sending issue ${issueNum} to column ${prefs.columnID}\n`);
+      res.status(500).send(`Error sending issue ${issueNum} to column ${columnID}\n`);
       console.log('Error:', error);
     });
 });
 
 // End of handlers
 
-console.log('Listening on port', prefs.serverPort);
-app.listen(prefs.serverPort);
+console.log('Listening on port', config.listenPort);
+app.listen(config.listenPort);

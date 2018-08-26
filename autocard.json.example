@@ -1,7 +1,6 @@
 {
   "token": "A Github personal access token",
   "secret": "Any string; a shared secret between this server and Github",
-  "columnID": A numerical ID uniquely identifying your target column,
   "debug": false,
-  "serverPort": 8881
+  "listenPort": 8881
 }
