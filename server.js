@@ -10,37 +10,33 @@ const express = require('express');
 const request = require('request-promise-native');
 const verifyGithubWebhook = require('verify-github-webhook');
 
-const configFile = process.autocard_config_file || 'autocard.json';
-
-const app = express();
-app.use(bodyParser.json());
-
-const rawPrefs = fs.readFileSync(configFile);
-if (!rawPrefs) {
-  throw new Error(`Could not read config file ${configFile}`);
-}
-const config = JSON.parse(rawPrefs);
-
-['token', 'secret', 'debug', 'listenPort'].forEach(k => {
-  if (config[k] === undefined) {
-    throw new Error(`Key ${k} missing from ${configFile}`);
+function loadConfig(configFile) {
+  let rawPrefs = fs.readFileSync(configFile);
+  if (!rawPrefs) {
+    throw new Error(`Could not read config file ${configFile}`);
   }
-});
-console.log(`Loaded config from ${configFile}`);
+  let config = JSON.parse(rawPrefs);
 
-if (config.debug) {
-  console.log('Debug mode on');
-  console.log('Config:', config);
+  ['token', 'secret', 'debug', 'listenPort'].forEach(k => {
+    if (config[k] === undefined) {
+      throw new Error(`Key ${k} missing from ${configFile}`);
+    }
+  });
+  console.log(`Loaded config from ${configFile}`);
+
+  if (config.debug) {
+    console.log('Debug mode on');
+    console.log('Config:', config);
+  }
+  return config;
 }
 
-// Handlers
-
-app.all('/', (req, res) => {
+function mainHandler(req, res) {
   res.set('Content-type', 'text/plain');
   res.send('autocard\n');
-});
+}
 
-app.post('/autocard-webhook/:columnid', (req, res) => {
+function webhookHandler(req, res) {
   res.set('Content-type', 'text/plain');
   const signature = req.get('X-Hub-Signature');
   if (config.debug) {
@@ -106,9 +102,21 @@ app.post('/autocard-webhook/:columnid', (req, res) => {
       res.status(500).send(`Error sending issue ${issueNum} to column ${columnID}\n`);
       console.log('Error:', error);
     });
-});
+}
 
-// End of handlers
+function main() {
+  const configFile = process.autocard_config_file || 'autocard.json';
+  config = loadConfig(configFile);
 
-console.log('Listening on port', config.listenPort);
-app.listen(config.listenPort);
+  const app = express();
+  app.use(bodyParser.json());
+
+  app.all('/', mainHandler);
+
+  app.post('/autocard-webhook/:columnid', webhookHandler);
+
+  console.log('Listening on port', config.listenPort);
+  app.listen(config.listenPort);
+}
+
+main();
