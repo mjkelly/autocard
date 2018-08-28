@@ -83,7 +83,7 @@ app.post('/autocard-webhook/:columnid', (req, res) => {
   console.log(`Issue ${issueNum} (${issueID}) in ${req.body.repository.full_name} opened`);
   const opts = {
     method: 'POST',
-    uri: `https://api.github.com/projects/columns/${columnID}/cards`,
+    uri: `https://${config.githubRoot}/projects/columns/${columnID}/cards`,
     headers: {
       'User-Agent': 'https://github.com/mjkelly/autocard',
       Authorization: 'token ' + config.token,
