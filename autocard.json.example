@@ -1,7 +1,6 @@
 {
   "token": "A Github personal access token",
   "secret": "Any string; a shared secret between this server and Github",
-  "debug": false,
   "listenPort": 8881,
   "githubRoot": "api.github.com"
 }

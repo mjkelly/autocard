@@ -43,7 +43,7 @@ class Autocard {
     }
     const config = JSON.parse(rawPrefs);
 
-    ['token', 'secret', 'debug', 'listenPort'].forEach(k => {
+    ['token', 'secret', 'listenPort', 'githubRoot'].forEach(k => {
       if (config[k] === undefined) {
         throw new Error(`Key ${k} missing from ${configFile}`);
       }
