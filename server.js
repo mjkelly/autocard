@@ -29,7 +29,7 @@ class Autocard {
 
   run() {
     if (this.config === null) {
-      throw new Error('You must call setup() before run()');
+      throw new Error('You must call loadConfig() before run()');
     }
     info('Listening on port', this.config.listenPort);
     this.app.listen(this.config.listenPort);
