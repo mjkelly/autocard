@@ -52,6 +52,12 @@ send new issues to.
 It's up to you to decide how to expose this server. (You really should run
 it behind a reverse proxy or a load balancer that adds SSL termination.)
 
+## Debugging
+
+We support `DEBUG` values of `autocard:info` and `autocard:debug`. So, for
+minimal logging, `export DEBUG=autocard:info`, or for more logging, turn
+everything on with `export DEBUG=autocard:*`.
+
 ## Docker
 
 There's a Dockerfile included. The easiest way to use it is to use the

@@ -10,17 +10,15 @@ const express = require('express');
 const request = require('request-promise-native');
 const verifyGithubWebhook = require('verify-github-webhook');
 
+const info = require('debug')('autocard:info');
+const debug = require('debug')('autocard:debug');
+
 class Autocard {
   constructor() {
     this.config = null;
-  }
-
-  setup() {
-    this.config = this.loadConfig();
 
     this.app = express();
     this.app.use(bodyParser.json());
-
     this.app.all('/', (req, res) => {
       this.mainHandler(req, res);
     });
@@ -33,7 +31,7 @@ class Autocard {
     if (this.config === null) {
       throw new Error('You must call setup() before run()');
     }
-    console.log('Listening on port', this.config.listenPort);
+    info('Listening on port', this.config.listenPort);
     this.app.listen(this.config.listenPort);
   }
 
@@ -50,13 +48,12 @@ class Autocard {
         throw new Error(`Key ${k} missing from ${configFile}`);
       }
     });
-    console.log(`Loaded config from ${configFile}`);
+    info(`Loaded config from ${configFile}`);
 
-    if (config.debug) {
-      console.log('Debug mode on');
-      console.log('Config:', config);
-    }
-    return config;
+    this.config = config;
+    // As of now, we can call debug();
+    debug('Debug mode on');
+    debug('Config:', this.config);
   }
 
   mainHandler(req, res) {
@@ -67,31 +64,29 @@ class Autocard {
   webhookHandler(req, res) {
     res.set('Content-type', 'text/plain');
     const signature = req.get('X-Hub-Signature');
-    if (this.config.debug) {
-      console.log('Signature:', signature);
-    }
+    debug('Signature:', signature);
 
     try {
       if (!verifyGithubWebhook.default(signature, JSON.stringify(req.body), this.config.secret)) {
-        console.log('Invalid signature');
+        info('Invalid signature');
         res.status(404).send('Invalid signature.\n');
         return;
       }
     } catch (err) {
       // Above, verifyGithubWebhook will throw various kinds of errors if the
       // signature isn't the right length, etc.
-      console.log(err);
+      info(err);
       res.status(404).send(`Error validating signature: ${signature}\n`);
       return;
     }
 
     if (req.body.action !== 'opened') {
-      console.log(`Nothing to do for action=${req.body.action}`);
+      info(`Nothing to do for action=${req.body.action}`);
       res.send(`Nothing to do for action=${req.body.action}\n`);
       return;
     }
     if (!req.body.issue) {
-      console.log('No "issue" parameter; nothing to do.');
+      info('No "issue" parameter; nothing to do.');
       res.send('No "issue" parameter; nothing to do.\n');
       return;
     }
@@ -100,11 +95,9 @@ class Autocard {
     const issueID = parseInt(req.body.issue.id, 10);
     const columnID = parseInt(req.params.columnid, 10);
 
-    if (this.config.debug) {
-      console.log('columID:', columnID);
-      console.log('POST body:', req.body);
-    }
-    console.log(`Issue ${issueNum} (${issueID}) in ${req.body.repository.full_name} opened`);
+    debug('columID:', columnID);
+    debug('POST body:', req.body);
+    info(`Issue ${issueNum} (${issueID}) in ${req.body.repository.full_name} opened`);
     const opts = {
       method: 'POST',
       uri: `https://${this.config.githubRoot}/projects/columns/${columnID}/cards`,
@@ -119,20 +112,18 @@ class Autocard {
       },
       json: true
     };
-    if (this.config.debug) {
-      console.log('Making request:', opts);
-    }
+    debug('Making request:', opts);
     request(opts)
       .then(resp => {
         res.send(`OK. Got: ${JSON.stringify(resp)}`);
-        console.log(`Successfully added issue ID ${issueID} to column ${columnID}`);
+        info(`Successfully added issue ID ${issueID} to column ${columnID}`);
       }).catch(error => {
         res.status(500).send(`Error sending issue ${issueNum} to column ${columnID}\n`);
-        console.log('Error:', error);
+        info('Error:', error);
       });
   }
 }
 
 const ac = new Autocard();
-ac.setup();
+ac.loadConfig();
 ac.run();
