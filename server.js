@@ -69,14 +69,14 @@ class Autocard {
     try {
       if (!verifyGithubWebhook.default(signature, JSON.stringify(req.body), this.config.secret)) {
         info('Invalid signature');
-        res.status(404).send('Invalid signature.\n');
+        res.status(403).send('Invalid signature.\n');
         return;
       }
     } catch (err) {
       // Above, verifyGithubWebhook will throw various kinds of errors if the
       // signature isn't the right length, etc.
       info(err);
-      res.status(404).send(`Error validating signature: ${signature}\n`);
+      res.status(403).send(`Error validating signature: ${signature}\n`);
       return;
     }
 
@@ -115,11 +115,12 @@ class Autocard {
     debug('Making request:', opts);
     request(opts)
       .then(resp => {
-        res.send(`OK. Got: ${JSON.stringify(resp)}`);
+        res.send(`OK`);
         info(`Successfully added issue ID ${issueID} to column ${columnID}`);
+        debug(`For issue ID ${issueID}, got: ${JSON.stringify(resp)}`);
       }).catch(error => {
         res.status(500).send(`Error sending issue ${issueNum} to column ${columnID}\n`);
-        info('Error:', error);
+        info(`Error for issue ID ${issueID}: ${error}`);
       });
   }
 }
