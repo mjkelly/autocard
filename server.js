@@ -36,7 +36,7 @@ class Autocard {
   }
 
   loadConfig() {
-    const configFile = process.autocard_config_file || 'autocard.json';
+    const configFile = process.env.autocard_config_file || 'autocard.json';
     const rawPrefs = fs.readFileSync(configFile);
     if (!rawPrefs) {
       throw new Error(`Could not read config file ${configFile}`);
