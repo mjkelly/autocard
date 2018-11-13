@@ -65,15 +65,15 @@ class Autocard {
     return new Promise((resolve, reject) => {
       fn()
         .then(resolve)
-        .catch((error) => {
+        .catch(error => {
           setTimeout(() => {
             if (triesLeft === 1) {
               info('Out of retries');
               reject(error);
               return;
             }
-            info(`Retrying, ${triesLeft-1} tries left`);
-            this.retry(fn, triesLeft-1, intervalMs).then(resolve, reject);
+            info(`Retrying, ${triesLeft - 1} tries left`);
+            this.retry(fn, triesLeft - 1, intervalMs).then(resolve, reject);
           }, intervalMs);
         });
     });
