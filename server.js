@@ -61,6 +61,24 @@ class Autocard {
     res.send('autocard\n');
   }
 
+  retry(fn, triesLeft, intervalMs) {
+    return new Promise((resolve, reject) => {
+      fn()
+        .then(resolve)
+        .catch((error) => {
+          setTimeout(() => {
+            if (triesLeft === 1) {
+              info('Out of retries');
+              reject(error);
+              return;
+            }
+            info(`Retrying, ${triesLeft-1} tries left`);
+            this.retry(fn, triesLeft-1, intervalMs).then(resolve, reject);
+          }, intervalMs);
+        });
+    });
+  }
+
   webhookHandler(req, res) {
     res.set('Content-type', 'text/plain');
     const signature = req.get('X-Hub-Signature');
@@ -113,7 +131,7 @@ class Autocard {
       json: true
     };
     debug('Making request:', opts);
-    request(opts)
+    this.retry(() => request(opts), 3, 1000)
       .then(resp => {
         res.send(`OK`);
         info(`Successfully added issue ID ${issueID} to column ${columnID}`);
