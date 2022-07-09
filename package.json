@@ -6,7 +6,7 @@
   "repository": "https://github.com/mjkelly/autocard",
   "main": "server.js",
   "dependencies": {
-    "ajv": "^6.5.3",
+    "ajv": "^6.12.3",
     "body-parser": "^1.18.3",
     "debug": "^3.1.0",
     "express": "^4.16.3",
